@@ -1,0 +1,106 @@
+<h2>Povinná struktura dokumentace IMS-2012/13</h2>
+<h3>Povinná osnova dokumentace (technické zprávy)</h3>
+<br>
+Smysl této povinné osnovy je dát praktický návod pro sepsání technické zprávy k projektu. Číslované kapitoly jsou <b>naprosto závazné</b> - jejich případná absence bude hodnocena bodovou srážkou. Berte technickou simulační zprávu jako formu protokolu. Rozhodně se nejedná o beletrii, váš osobní příběh nebo filosofickou úvahu - tyto formy si můžete dovolit až v pokročilejším věku (kdy zřejmě už pochopíte, že beztak v technice jsou preferována relevantní fakta, specificky u platících zákazníků).<br>
+<br>
+Kapitoly první úrovně mají závazný název. Kapitoly druhé úrovně nemají závazný název, upravte si název dle potřeby. V dokumentu jsou povinné tématické bloky kapitol první a druhé úrovně s nenulovým obsahem. Kapitola první úrovně předpokládá určitý text (uvedeno v popisu) rozšířený o témata kapitol druhé úrovně.<br>
+<br>
+<b>Podstatné je, že technická zpráva se neobhajuje a nekomentuje. Všecko relevantní má být obsaženo v ní. Nejsou přípustná žádná dodatečná ústní sdělení. Pokud čtenář z vaší technické zprávy něco chybně pochopí, je to vždy vaše vina.</b><br>
+<br>
+Je jasné, že různá témata budou klást důraz na jiné partie zprávy:<br>
+<ul>
+<li> implementační - literatura, koncepce, zpracování implementace, ověření na průkazném demopříkladě
+<li> modelační/aplikační - literatura a zjišťování v terénu, zdůvodnění koncepce modelu, simulační studie vedoucí k jasnému závěru
+</ul>
+<br>
+Bez ohledu na charakter tématu lze v technické dokumentaci VŽDY odděleně popsat:<br>
+<ul>
+<li> Úvod a motivaci
+<li> Shrnutí relevantních faktů, zdroje informací
+<li> Koncepci metody, přístupu, modelu
+<li> Implementaci metody, modelu
+<li> Experimentování
+<li> Závěr
+</ul>
+<br>
+<br>
+<h3>1. Úvod</h3>
+Úvod musí vysvětlit, <b>proč se celá práce dělá a proč má uživatel výsledků váš dokument číst</b> (prosím, projekt sice děláte pro získání zápočtu v IMS, ale mohou existovat i jiné důvody). Případně, co se při čtení dozví. <br>
+<br>
+Například: <br>
+<ul>
+<li> v této práci je řešena implementace ..., která bude použita pro sestavení modelu ... 
+<li> na základě modelu a simulačních experimentů bude ukázáno chování systému ... v podmínkách ... 
+<li> smyslem experimentů je demonstrovat, že pokud by ..., pak by ... 
+<li> Poznámka: u vyžádaných zpráv se může uvést, že zpráva vznikla na základě požadavku ... (u školní práce takto zdůvod'novat projekt ovšem nelze, že). Je velmi praktické zdůvodnit, <b>v čem je práce náročná a proto přínos autora nepopiratelný</b> (např. pro zpracování modelu bylo nutno nastudovat ..., zpracovat, ... model je ve svém oboru zajímavý/ojedinělý v ...).
+</ul>
+<br>
+Podkapitoly:<br>
+<ul>
+<li> kapitola 1.1: Kdo se na práci podílel jako autor, odborný konzultant, dodavatel odborných faktů, význačné zdroje literatury/fakt, ...
+<ul>
+<li> je ideální, pokud jste vaši koncepci konzultovali s nějakou autoritou v oboru (v IMS projektu to je hodnoceno, ovšem není vyžadováno)
+<li> pokud nebudete mít odborného konzultanta, nevadí. Nelze ovšem tvrdit, že jste celé dílo vymysleli s nulovou interakcí s okolím a literaturou.
+</ul>
+<li> kapitola 1.2: V jakém prostředí a za jakých podmínek probíhalo experimentální ověřování validity modelu &#8211; pokud čtenář/zadavatel vaší zprávy neuvěří ve validitu vašeho modelu, <b>obvykle vaši práci odmítne už v tomto okamžiku</b>.
+</ul>
+<br>
+<h3>2. Rozbor tématu a použitých metod/technologií</h3>
+Shrnutí všech podstatných faktů, které se týkají zkoumaného systému (co možná nejvěcnějším a technickým (ideálně formálně matematickým) přístupem, žádné literární příběhy). <b>Podstatná fakta o systému musí být zdůvodněna a podepřena důvěryhodným zdrojem</b> (vědecký článek, kniha, osobní měření a zjišťování). Pokud budete tvrdit, že ovce na pastvě sežere dvě kila trávy za den, musí existovat jiný (důvěryhodný) zdroj, který to potvrdí. Toto shrnutí určuje míru důvěryhodnosti vašeho modelu (nikdo nechce výsledky z nedůvěryhodného modelu). Pokud nebudou uvedeny zdroje faktů o vašem systému, hrozí ztráta bodů.<br>
+<ul>
+<li> kapitola 2.1: Popis <b>použitých postupů</b> pro vytvoření modelu a zdůvodnění, <b>proč jsou pro zadaný problém vhodné</b>. Zdůvodnění může být podpořeno ukázáním alternativního přístupu a srovnáním s tím vaším. Čtenář musí mít jistotu, že zvolené nástroje/postupy/technologie jsou ideální pro řešení zadaného problému (ovšem, "dělám to v Javě, protože momentálně Java frčí..." nemusí zadavatele studie uspokojit).
+<li> kapitola 2.2: Popis <b>původu</b> použitých metod/technologií (odkud byly získány (odkazy), zda-li jsou vytvořeny autorem) - převzaté části dokumentovat (specificky, pokud k nim přísluší nějaké autorské oprávnění/licence). Zdůvodnit potřebu vytvoření vlastních metod/nástrojů/algoritmů. Ve většině případů budete přebírat již navržené metody/algoritmy/definice/nástroje a je to pro školní projekt typické. Stejně tak je typické, že <b>studenti chybně vymýšlí již hotové věci a dojdou k naprostému nesmyslu</b> - je třeba toto nebezpečí eleminovat v tomto zdůvodnění.
+</ul>
+<br>
+<b>Velmi důležité, až fanaticky povinné, kontrolované a hodnocené: na každém místě v textu, kde se poprvé objeví pojem z předmětu IMS bude v závorce uveden odkaz na předmět a číslo slajdu, na kterém je pojem definován</b>. Pokud bude významný pojem z předmětu IMS takto nedokumentován v textu a zjevně bude používán nevhodným nebo nepřesným způsobem, bude tento fakt hodnocen bodovou ztrátou. Tento požadavek je míněn s naprostou vážností. Cílem je vyhnout se studentské tvůrčí činnosti ve vysvětlování známých pojmů, což mnohdy vede k naprostým bludům, ztrátě bodů a zápočtů. Pokud student pojem cituje korektně a přesto nekorektně používá, bude to hodnoceno dvojnásobnou bodovou ztrátou.<br>
+<br>
+<h3>3. Koncepce - modelářská témata</h3>
+Konceptuální model je abstrakce reality a redukce reality na soubor relevantních faktů pro sestavení simulačního modelu. Předpokládáme, že model bude obsahovat fakta z "Rozboru tématu". Pokud jsou některá vyřazena nebo modifikována, je nuto to zde zdůvodnit (například: zkoumaný subjekt vykazuje v jednom procentu případů toto chování, ovšem pro potřeby modelu je to naprosto marginální a smíme to zanedbat, neboť ...). <b>Pokud některé partie reality zanedbáváte nebo zjednodušujete, musí to být zdůvodněno a v ideálním případě musí být prokázáno, že to neovlivní validitu modelu.</b> Cílem konceptuálního (abstraktního) modelu je formalizovat relevantní fakta o modelovaném systému a jejich vazby. Podle koncept. modelu by měl být každý schopen sestavit simulační model.<br>
+<ul>
+<li> kapitola 3.1: Způsob vyjádření konceptuálního modelu musí být zdůvodněn (na obrázku xxx je uvedeno schéma systému, v rovnicích xx-yy jsou popsány vazby mezi ..., způsob synchronizace procesů je na obrázku xxx s Petriho sítí).
+<li> kapitola 3.2: Formy konceptuálního modelu (důraz je kladen na srozumitelnost sdělení). Podle potřeby uveďte konkrétní relevantní:
+<ul>
+<li> obrázek/náčrt/schéma/mapa (možno čitelně rukou) 
+<li> matematické rovnice - u některých témat (např. se spojitými prvky, optimalizace, ...) naprosto nezbytné. <b>Dobré je chápat, že veličiny (fyzikální, technické, ekonomické) mají jednotky, bez kterých údaj nedává smysl.</b>
+<li> stavový diagram (konečný automat) nebo Petriho síť - spíše na abstraktní úrovni. Petriho síť nemá zobrazovat výpočty a přílišné detaily. Pokud se pohodlně nevejde na obrazovku, je nepoužitelná. Možno rozdělit na bloky se zajímavými detaily a prezentovat odděleně abstraktní celek a podrobně specifikované bloky (hierarchický přístup).
+</ul>
+</ul>
+<br>
+<h3>3. Koncepce - implementační témata</h3>
+Popište abstraktně architekturu vašeho programu, princip jeho činnosti, významné datové struktury a podobně. Smyslem této kapitoly je podat informaci o programu bez použití názvů tříd, funkcí a podobně. Tuto kapitolu by měl pochopit každý technik i bez informatického vzdělání. Vyjadřovacími prostředky jsou vývojové diagramy, schémata, vzorce, algoritmy v pseudokódu a podobně. Musí zde být vysvětlena nosná myšlenka vašeho přístupu.<br>
+<br>
+<br>
+<h3>4. Architektura simulačního modelu/simulátoru</h3>
+Tato kapitola má různou důležitost pro různé typy zadání. U implementačních témat lze tady očekávat jádro dokumentace. Zde můžete využít zajímavého prvku ve vašem simulačním modelu a tady ho "prodat".<br>
+<ul>
+<li> kapitola 4.1: Minimálně je nutno ukázat mapování abstraktního (koncept.) modelu do simulačního (resp. simulátoru). Např. které třídy odpovídají kterým procesům/veličinám a podobně.
+</ul>
+<br>
+<br>
+<br>
+<h3>5. Podstata simulačních experimentů a jejich průběh</h3>
+<b>Nezaměňujte pojmy testování a experimentování (důvod pro bodovou ztrátu)!!!</b><br>
+Zopakovat/shrnout <b>co přesně chcete zjistit experimentováním</b> a proč k tomu potřebujete model. <b>Pokud experimentování nemá cíl, je celý projekt špatně.</b> Je celkem přípustné u experimentu odhalit chybu v modelu, kterou na základě experimentu opravíte. Pokud se v některém experimentu nechová model podle očekávání, je nutné tento experiment důkladně prověřit a chování modelu zdůvodnit (je to součást simulačnické profese). Pokud model pro některé vstupy nemá důvěryhodné výsledky, je nutné to zdokumentovat. Pochopitelně model musí mít důvěryhodné výsledky pro většinu myslitelných vstupů.<br>
+<ul>
+<li> kapitola 5.1: Naznačit postup experimentování &#8211; jakým způsobem hodláte prostřednictvím experimentů dojít ke svému cíli (v některých situacích je přípustné "to zkoušet tak dlouho až to vyjde", ale i ty musí mít nějaký organizovaný postup).
+<li> kapitola 5.2: Dokumentace jednotlivých experimentů - souhrn vstupních podmínek a podmínek běhu simulace, komentovaný výpis výsledků, závěr experimentu a plán pro další experiment (např. v experimentu 341. jsem nastavil vstup x na hodnotu X, která je typická pro ... a vstup y na Y, protože chci zjistit chování systému v prostředi ... Po skončení běhu simulace byly získány tyto výsledky ..., kde je nejzajímavější hodnota sledovaných veličin a,b,c které se chovaly podle předpokladu a veličin d,e,f které ne. Lze z toho usoudit, že v modelu není správně implementováno chování v podmínkách ... a proto v následujících experimentech budu vycházet z modifikovaného modelu verze ... Nebo výsledky ukazují, že systém v těchto podmínkách vykazuje značnou citlivost na parametr x ... a proto bude dobré v dalších experimentech přesně prověřit chování systému na parametr x v intervalu hodnot ... až ...)
+<li> kapitola 5.3: Závěry experimentů &#8211; bylo provedeno N experimentů v těchto situacích ... V průběhu experimentování byla odstraněna ... chyba v modelu. Z experimentů lze odvodit chování systémů s dostatečnou věrohodností a experimentální prověřování těchto ... situací již napřinese další výsledky, neboť ... 
+</ul>
+<br>
+<br>
+<h3>6. Shrnutí simulačních experimentů a závěr</h3>
+Závěrem dokumentace se rozumí <b>zhodnocení simulační studie a zhodnocení experimentů</b> (např. Z výsledků experimentů vyplývá, že ... při předpokladu, že ... Validita modelu byla ověřena ... V rámci projektu vznikl nástroj ..., který vychází z ... a byl implementován v ...).<br>
+<ul>
+<li> do závěru se nehodí psát poznámky osobního charakteru (např. práce na projektu mě bavila/nebavila, ...). <b>Technická zpráva není osobní příběh autora.</b>
+<li> absolutně nikoho nezajímá, kolik úsilí jste projektu věnovali, důležitá je pouze kvalita zpracování simulátoru/modelu a obsažnost simulační studie (rozhodně ne např.: projekt jsem dělal ... hodin, což je víc než zadání předpokládalo. Program má ... řádků kódu). <b>Pokud zdůrazňujete, že jste práci dělali významně déle než se čekalo, pak tím pouze demonstrujete vlastní neschopnost (to platí zejména v profesním životě).</b>
+<li> do závěru se velmi nehodí psát "auto-zhodnocení" kvality práce, to je výhradně na recenzentovi/hodnotiteli (např. v projektu jsem zcela splnil zadání a domnívám se, že můj model je bezchybný a výsledky taktéž). Statisticky častý je pravý opak autorova auto-zhodnocení. Pokud přesto chcete vyzdvihnout kvalitu svého díla (což je dobře), tak vaše výroky musí být naprosto nepopiratelně zdůvodněny a prokázány (např. pomocí jiného referenčního přístupu, matematického důkazu, analýzy, ...).
+</ul>
+<br>
+<br>
+<h3>Obecné poznámky</h3>
+<ul>
+<li> v dokumentaci neocením "úvodní stránku s logem fakulty" a obsah. Obvzláště obsah jako jedna stránka u čtyř-pěti stránkového dokumentu působí směšně. Tyto dvě strany pochopitelně smíte zprávě předřadit, nepočítám je ovšem do počtu stran zprávy.
+<li> grafy mají své náležitosti - identifikační název grafu (případně jeho číslo), cejchované osy s názvem veličiny na dané ose (včetně její jednotky). V případě grafu kombinujícího více jevů i legenda dokumentující grafické vyjádření jevů v grafu. 
+<li> <b>veškeré tabulky a grafy musí být komentovány v textu - čtenáři musí řečeno, co v tom grafu uvidí a čeho si má všimnout.</b>
+</ul>
+

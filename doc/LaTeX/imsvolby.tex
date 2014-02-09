@@ -1,0 +1,453 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Dokumentace k projektu pro předmět IMS, 2013
+%% Model státní volební infrastruktury
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[12pt,a4paper,titlepage,final]{article}
+
+% matika
+\usepackage[tbtags]{amsmath}
+% cestina a fonty
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[IL2]{fontenc}	% aby se text dal z PDF lehce kopírovat s diakritikou
+% balicky pro odkazy
+\usepackage[bookmarksopen,colorlinks,plainpages=false,urlcolor=blue,unicode]{hyperref}
+\usepackage{url}
+% obrazky
+\usepackage[dvipdf]{graphicx}
+\usepackage{float}
+% velikost stranky
+\usepackage[top=3.5cm, left=2.5cm, text={17cm, 24cm}, ignorefoot]{geometry}
+% \usepackage{lscape}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% titulní strana
+
+\input{title.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% obsah
+\pagestyle{plain}
+\pagenumbering{roman}
+\setcounter{page}{1}
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% textova zprava
+\newpage
+\pagestyle{plain}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Úvod} \label{uvod}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+V této práci je řešena implementace modelu \cite[str. 7]{ims} státní volební infrastruktury a jeho použití k simulaci \cite[str. 7]{ims} Parlamentních voleb, s cílem ověření výhodnosti navržené optimalizace \cite[str. 43]{ims} způsobu distribuce výsledků voleb z jednotlivých okrsků.
+
+V současnosti jsou volební výsledky z jednotlivých okrsků svážena na přebírací místa, odkud jsou počítačovou sítí přenášena na server volebního centra Českého statistického úřadu (ČSÚ).
+
+Předmětem navrhované optimalizace je zapojení volebních okrsků do počítačové sítě ČSÚ a následný přenos výsledků z okrskových počítačů na server centra přímo, bez přebíracích míst.
+
+Pro potřeby vytvoření modelu bylo nutné nastudovát informace o organizaci voleb \cite{mesicnik}, způsobu sčítání hlasů, distribuci volebních výsledků \cite{mesicnik}\cite{spec-soutez} a související předpisy \cite{nssoud1}\cite{nssoud4}\cite{nssoud14}.
+
+%=============================================================================
+\subsection{Autoři práce a zdroje faktů}
+%=============================================================================
+
+Autory této práce jsou Jan Kalina a Jan Doležal. Práce byla konzultována s technikem přebíracího místa v Hustopečích, Gustavem Mrázkem.
+
+Vstupní data modelu (počet voličů a okrsků v jednotlivých krajích a krajských městech) byly vytvořeny agregací dat ze serveru OtevřenéVolby.cz. \cite{otevrenevolby} Informace o reálné volební účasti byla získána ze serveru Volby.cz. \cite{volby}
+
+%=============================================================================
+\subsection{Validita projektu}
+%=============================================================================
+
+Validita modelu \cite[str. 37]{ims} byla ověřena srovnáním chování \cite[str. 24]{ims} modelu a modelovaného systému.
+
+Jelikož byla četnost příchodů voličů stanovena tak, aby celková volební účast v modelu odpovídala skutečné celkové volební účasti, nebyl proces přicházení voličů validován porovnáváním volební účasti, ale naopak porovnáváním četnosti příchodů voličů v modelu s realitou. Střední hodnota exponenciální pravděpodobnostní funkce \cite[str. 91]{ims} 5,99 minuty vyžadovaná modelem pro dosažení požadované volební účasti odpovídá v rozumné toleranci naměřené reálné četnosti příchodu voličů do volební místnosti, čímž tuto část modelu považujeme za validní.
+
+Z ostatních veličin, jelikož sčítání hlasů na okrscích ani zpracování výsledků na přebíracích místech není veřejnosti přístupné, bylo možné porovnat jen čas od oficiálního uzavření volebních místností do zveřejnění konečných výsledků na prezentačních serverech portálu Volby.cz \cite{volby}. Procesy sčítání a distribuce volebních výsledků tak byly validovány jako jeden celek. Čas potřebný k replikaci dat ze zapisovatelného hlavního databázového serveru centra na zrcadla tohoto serveru užívaná prezentačními servery byl zanedbán, což není překážkou validitě modelu díky vysoké rychlosti spojů mezi těmito servery. Rozdíl mezi časem sčítání a distribuce výsledků v modelu a při skutečném sčítání byl v toleranci, čímž tuto část modelu rovněž považujeme za validní.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Rozbor tématu a použitých metod/technologií} \label{rozbor}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Tématem práce je simulace \cite[str. 33]{ims} státní volební infrastruktury České republiky. Česká republika je rozdělena do krajů, které jsou rozděleny do okrsků, přičemž každý okrsek má předem přidělený seznam voličů, kterým může umožnit hlasovat. \cite{nssoud4} Každý volič tak má přidělen okrsek, v kterém se může zúčastnit hlasování, zpravidla na základě svého trvalého bydliště. Volič si může vyžádat výjimku v podobě voličského průkazu, jež ho opravňuje k hlasování v jiném okrsku. Tato výjimka je ale využívána jen minoritně a v rámci této studie je proto zanedbána.
+
+Volební místnost je otevřena po dvě časová okna -- první volební den od 14:00 do 22:00, druhý volební den od 8:00 do 14:00. \cite{nssoud1} Voliči přicházejí do volebních místností v nichž jsou registrovaní v těchto časových oknech v intervalech, které je možné aproximovat za pomoci exponenciální pravděpodobnostní funkce. Střed této funkce byl stanoven s cílem přiblížit se maximálně reálné volební účasti, metodou půlení intervalu, opakovaným spouštěním simulace a porovnáváním výsledné volební účasti.
+
+Minimální počet volebních komisařů v každém okrsku je stanoven zákonem na 5 pro okrsky nad 300 voličů a na 4 pro okrsky s méně voliči, přičemž tento počet může být navýšen rozhodnutím místního starosty. \cite{nssoud14} (Jelikož této pravomoci se v praxi také obvykle neužívá, bude v rámci této studie rovněž zanedbána.) Jednotliví komisaři mají voliče striktně rozděleny (každý má část Stálého seznamu \cite{nssoud4}) a před každým se tak tvoří samostatná fronta \cite[str. 138]{ims}. Doba kterou trvá volebnímu komisaři obsloužení voliče (tedy nalezení voliče v seznamu, jeho odškrtnutí a vydání oficiální obálky) byla v rámci přípravy studie změřena jako 15 -- 45 sekund v normálním rozložení pravděpodobnosti \cite[str. 93]{ims}.
+
+Voliči vybavení oficiální obálkou postupují do fronty \cite[str. 138]{ims} na plentu, za kterou vkládají hlasovací lístek do obálky. Tento úkon jim dle měření trvá 10 -- 80 sekund v normálním rozložení pravděpodobnosti. Nakonec přistupují k volební urně, kde (dle měření) 3 -- 20 sekund v normálním rozložení pravděpodobnosti vhazují obálku do urny a odchází.
+
+Hlasování je ukončeno druhý den voleb ve 14:00 nebo po odvolení všech voličů. (Toto je aspekt zadání vyžadující dříve zmíněné zanedbání volebních průkazů - v takovém případě by totiž komise nemohla určit zda mohou přijít ještě další voliči a předčasné uzavření místnosti se proto v reálném volebním systému nepoužívá.) Jsou-li v čas plánovaného ukončení voleb ve volební místnosti přítomni voliči, je jim ještě dovoleno odvolit, ale dalším voličům je již zabráněno ve vstupu do volební místnosti. Po ukončení hlasování (kdy volební místnost opustí zbývající voliči) je zahájeno sčítání.
+
+Sčítání se skládá z přípravné části, sčítání jednotlivých hlasů a přepisu sečtených hodnot do okrskového počítače. Přípravná část zahrnuje rozpečetění urny a připravení potřebných tiskopisů. To trvá dle měření 2 -- 10 minut v normálním rozložení pravděpodobnosti. Samotné sčítání spočívá v započítávání jednotlivých hlasů. Započtení jedné volební obálky dle měření trvá 10 -- 60 sekund v normálním rozložení pravděpodobnosti. Závěrečné sečtení hlasů včetně přepisu počtu hlasů do okrskového počítače a vyexportování na flash paměť pak dle měření trvá 15 -- 30 minut v normálním rozložení pravděpodobnosti.
+
+Protokol a flash paměť s výsledkem sčítání jsou převezeny na přebírací místo (PM, pracoviště Českého statistického úřadu na úrovni volebního obvodu) do kterého okrsek spadá. Přebíracích míst je v ČR dle měsíčníku ČSÚ okolo 500. \cite{mesicnik} Tato cesta je běžně 0 -- 20 km dlouhá, při normálním pravděpodobnostním rozložení. (Tento údaj byl získán ze vzorku 10 náhodně vybraných obcí, ze seznamu přebíracích míst a obcí, jejichž okrsky pod tyto přebírací místa spadají. Délka cesty byla odhadnuta službou Mapy.cz.) Tato cesta trvá běžně 1 -- 30 minut. (Minimální hodnota vychází z předpokladu že se volební okrsková komise nachází ve stejné budově jako přebírací místo, maximální hodnota pak z odhadu doby cesty ze služby Mapy.cz)
+
+Komise jsou na přebíracích místech odbavovány na jedné z pořizovacích stanic. Odbavení komise spočívá v naimportování dat z flash paměti do pořizovací stanice a sepsaní protokolu. Protože pořizovací místa nejsou veřejnosti přístupná, nebylo možné dobu pořizování přesně změřit. Obsluhou byla ale doba pořízení odhadnuta na 5 -- 10 minut. Pořizovací stanice tedy postupně shromažďují výsledky z jednotlivých okrsků, dokud nejsou odbaveny všechny komise.
+
+Následně jsou takto shromážděná data skrze flash paměť nakopírována do zpracovatelské stanice, což je počítač izolovaný od běžné počítačové sítě a připojený do virtuální privátní sítě (VPN) ČSÚ. Ačkoli termín VPN obvykle označuje virtuální síť postavenou za pomoci kryptografie nad běžnou počítačovou sítí, v tomto případě je takto označována virtuální LAN (VLAN) -- virtuální síť vytvořená hardwarovými síťovými prvky nad síťovou infrastrukturou, v tomto případě společnosti O2. \cite{smlouva-spec-web}
+
+Zpracovatelská stanice předává data skrze VPN na hlavní databázový server ČSÚ, ze kterého se data dále replikují na ostatní databázové servery, servery náležející prezentačním serverům webu Volby.cz a dedikovaný server pro média. \cite{spec-soutez} Pro potřeby naší simulace budeme data považovat za sečtená ve chvíli, kdy budou veškerá data zpracovaná hlavním databázovým serverem.
+
+Minimální rychlost VPN je zadáním veřejné zakázky stanovena na 100 kb/s oběma směry a dostupnost na 99,0\%. \cite{ezak-czso} Velikost dat odesílaných ze zpracovatelské stanice byla obsluhou stanice odhadnuta na jednotky kilobytů. Není již ale bohužel stanovena latence, proto ani čas přenosu dat na hlavní databázový server nemůže být přesně vypočítán. Doba navázání spojení s tímto serverem a přenosu dat je tak odhadnuta na základě měření doby přenosu na podobně dimenzovaný server (eva.fit.vutbr.cz) na 0,5 -- 2 sekundy. Doba přenosu počítačovou sítí je určena odečtením času potřebného k přenosu stejných dat v rámci lokální počítačové sítě od času potřebného pro přenesení těchto dat v rámci sítě Internet. Předpokládá se přitom že spojení mezi dvěma klienty sítě O2 (zařízeními připojenými do O2 VPN) bude nejvýše tak časově náročné, jako spojení z počítače připojeného k internetu skrze síť O2 se službou běžící v síti Internet. Takto byla doba přenosu paketu z aplikace po síti VPN do schránky serveru zjištěna jako 0,05 -- 0,5 sekundy s normálním rozložením pravděpodobnosti.
+
+%=============================================================================
+\subsection{Popis použitých postupů pro vytvoření modelu}
+%=============================================================================
+
+Simulační model \cite[str. 10]{ims} je simulován pomocí diskrétní simulace \cite[str. 34]{ims} jako systém hromadné obsluhy\cite[str. 136]{ims}.
+
+Pro jeho implementaci byl zvolen jazyk C++ verze 11 a simulační knihovna Simlib. Knihovna Simlib byla zvolena, protože poskytuje veškerou funkcionalitu potřebnou pro implementaci a je vydána pod licencí GNU LGPL. Provádění experimentů ani jejich opakování tak nevyžaduje platbu žádných licenčních poplatků, na rozdíl od komerčních prostředků, jakým je například prostředí Dymola. Jazyk C++ pak, tím že je kompilovaný do nativního kódu procesoru, umožňuje rychlé provádění simulace.
+
+Seznam okrsků byl generován náhodně na základě dat o počtu voličů a počtu okrsků v jednotlivých krajích. Ze zdrojového CSV (získaného ze serveru OtevřenéVolby.cz \cite{otevrenevolby}) byla data naimportována do databáze MySQL a dotazováním nad takto vzniklou databází (\texttt{generator/database.sql}) byla získána agregovaná data - počet okrsků a voličů v jednotlivých krajích a v krajských městech. Takto získaná data byla ještě doopravena tabulkovým procesorem a exportována do CSV (\texttt{generator/vstup.csv}) představujícího seznam oblastí (oblastí je pro potřeby této studie označováno krajské město nebo kraj bez krajského města) s počtem voličů a okrsků v jednotlivých oblastech, který byl předán jako vstup našemu generátoru okrsků.
+
+Generátor okrsků je program v C++/Simlib, ale je nezávislý na programu simulačního modelu. Ze vstupního CSV, které definuje počet voličů a okrsků v jednotlivých oblastech, generuje seznam okrsků, který ukládá do výstupního CSV (\texttt{generator/vystup.csv}). Ten je pak předáván jako vstup samotnému modelu.
+
+%=============================================================================
+\subsection{Popis původu použitých metod/technologií}
+%=============================================================================
+
+Diskrétní simulace a knihovna Simlib jsou použity tak jak byly popsány na přednáškách IMS. Knihovna Simlib byla stažena z oficiálního webu knihovny na webu jejího autora, doktora Peringera. (\url{http://www.fit.vutbr.cz/~peringer/SIMLIB/}) Model ani generátor okrsků nepoužívají jiných prostředků než jsou dostupné ze standardní knihovny jazyka C++ 11 a z knihovny Simlib.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Koncepce} \label{koncepce}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+V této kapitole je definován konceptuální model \cite[str. 48]{ims} vytvořený na základě známých faktů o systému zmíněných v předchozích kapitolách, na základě kterého byl vytvořen simulační model.
+
+%=============================================================================
+\subsection{Způsob vyjádření modelu}
+%=============================================================================
+
+Přicházení voličů do volební místnosti, hlasování a sečtení okrsku včetně přepisu výsledků do okrskového počítače je znázorněno Petriho sítí na obrázku~\ref{fig:1_petri_volici}.
+
+V případě varianty stávajícího řešení, kdy jsou data přenášena na přebírací místa putují data ze stavu Sečtené okrsky do stejně pojmenovaného stavu Petriho sítě přebíracího místa vyobrazené na obrázku~\ref{fig:2_petri_pm}. Zde prochází pořizovacími pracovišti a po pořízení všech okrsků přebíracího místa jsou data nasbíraná pořizovacími pracovišti zpracovány zpracovatelským pracovištěm, jehož výstupem je požadavek na centrum. Stav Požadavky na centrum na obrázku~\ref{fig:2_petri_pm} lze ztotožnit se stavem Požadavky čekající na centrum v Petriho síti volebního centra na obrázku~\ref{fig:3_petri_centrum}.
+
+V případě varianty navrhovaného řešení není přebírací místo použito a stav Sečtené okrsky na obrázku~\ref{fig:1_petri_volici} lze ztotožnit přímo se stavem Požadavky čekající na centrum v Petriho síti volebního centra na obrázku~\ref{fig:3_petri_centrum}.
+
+Zobrazení ve formě Petriho sítí bylo zvoleno, protože se abstraktní model skládá převážně z prvků typicky zobrazovaných ve formě Petriho sítí -- obslužných linek \cite[str. 163]{ims}.
+
+%=============================================================================
+\subsection{Popis konceptuálního modelu}
+%=============================================================================
+
+Hlasování začíná otevřením volebních místností první volební den v 14:00. Ve 22:00 hodin prvního volebního dne je hlasování přerušeno a opět obnoveno druhý volební den v 8:00. Ve 14:00 hodin druhého volebního dne je volební místnost uzavřena naposledy a následuje sčítání. V době kdy je volební místnost otevřená přicházejí jednotliví voliči. Čas mezi příchody dvou po sobě jdoucích voličů je aproximován za pomoci exponenciálního rozložení pravděpodobnosti \cite[str. 91]{ims}.
+
+Voliči kteří přijdou vstupují do fronty jednoho z volebních komisařů. Ti jsou modelováni jako obslužná zařízení \cite[str. 180]{ims}, mezi kterými si volič náhodně vybírá. (Což je ekvivalentní přístupu, kdy jsou voliči komisařům předem přiřazeni, např. podle ulic trvalého bydliště, ale voliči přicházejí v náhodném pořadí, bez ohledu na svoje trvalé bydliště) Obsluha komisařem trvá 15 -- 45 sekund s normálním rozdělením pravděpodobnosti.
+
+Obsloužení voliči vstupují do fronty na volební plentu, která je obslužným zařízením \cite[str. 180]{ims}. Za plentou voliči stráví 10 -- 80 sekund s normálním rozložením pravděpodobnosti. Zpoza plenty voliči vstupují do fronty na volební urnu, která je také obslužným zařízením, ale voliči ji obsazují pouze 3 -- 20 sekund a navýší přitom počet hlasů ve volební urně o jedna. Poté voliči systém opouští.
+
+V čas kdy má být volební místnost uzavřena je zastaveno generování přicházejících voličů. (Voliči znají dobu kdy jsou volební místnosti otevřené a nechodí v době kdy jsou zavřené.) Odbavování jednotlivých voličů pokračuje až do vyprázdnění všech front ve volební místnosti.
+
+Po závěrečném uzavření volební místnosti je zahájeno sčítání. Sčítání je tvořeno třemi fázemi -- fází přípravnou (vysypání urny, tisk formulářů) jejíž trvání nezávisí na počtu hlasů, fází samotného sčítání, kdy jsou otvírány a započítávány jednotlivé obálky a jejíž trvání lineárně závisí na počtu hlasů, jenž byly vhozeny do volební urny, a fází závěrečnou, kdy jsou formuláře vyplněny a výsledky zadány do okrskového počítače. V případě varianty s přebíracími místy poté volební komise odnáší výsledky na přebírací místo, kde budou dále reprezentovány požadavkem na pořízení, jež je obsahuje. V případě druhé varianty je na okrskovém počítači vytvořen požadavek na centrum obsahující sečtená data.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=16cm,keepaspectratio]{../1-petri-volici.eps}
+  \caption{Petriho síť: Volební okrsek}
+  \label{fig:1_petri_volici}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=6cm,keepaspectratio]{../2-petri-pm.eps}
+  \caption{Petriho síť: Přebírací místo (PM)}
+  \label{fig:2_petri_pm}
+\end{figure}
+
+Přebírací místo je tvořeno skupinou paralelně pracujících obslužných zařízení se společnou frontou -- pořizovacími pracovišti. Pořizovací pracoviště vyřizují požadavky na pořízení e svých okrsků. Po vyřízení požadavků všech okrsků jsou data z pořizovacích stanic přenesena na zpracovatelské pracoviště, odkud je skrze síť VPN odeslán požadavek na centrum obsahující sečtená data všech okrsků přebíracího místa.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=5cm,keepaspectratio]{../3-petri-centrum.eps}
+  \caption{Petriho síť: Volební centrum}
+  \label{fig:3_petri_centrum}
+\end{figure}
+
+Síť VPN je zjednodušeně modelována jako síť hvězdicové topologie a odesílaná data jako jediný paket, přičemž je zanedbána režijní komunikace spolehlivostního protokolu TCP. Jednotlivé větve hvězdicové sítě pak jsou modelovány jako obslužná zařízení -- linky s výlučným přístupem. (Na straně zařízení je výlučnost zajištěna z principu, proto obslužné zařízení jako takové modelujeme jen na straně serveru.) Požadavek na centrum tedy nejprve projde svojí linkou na směrovač a zde čeká na uvolnění linky k serveru. Jakmile získá linku k serveru, projde skrze linku do schránky (socketu) serveru a zde čeká, než bude vyzvednut procesem serveru. Server centra je modelován jako zařízení s výlučným přístupem.
+
+Potom co hlavní volební server nasbírá data o všech okrscích, považujeme volby za dokončené.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Architektura simulačního modelu} \label{architektura}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Model byl implementován v jazyce C++ verze 11 se simulační knihovnou Simlib.
+
+%=============================================================================
+\subsection{Mapování abstraktního modelu do simulačního}
+%=============================================================================
+
+Simulace začíná inicializací objektů okrsků (\texttt{Okrsek}) na základě dat ze souboru okrsků. Samotný okrsek je pouze datovým objektem sdružujícím objekty vztahující se k jednomu okrsku. Jeho jedinou významnou metodou je metoda \texttt{init()}, která naplánuje otevření volební místnosti na začátku každého dne voleb -- událost \texttt{OtevreniMistnosti}. Otevření místnosti způsobí naplánování uzavření místnosti (událost \texttt{UzavreniMistnosti}) a první naplánování příchodu voliče (události \texttt{PrichodVolice}), která následně způsobuje plánování příchodů voličů až dokud plánovaný čas příchodu dalšího voliče nepřekročí čas uzavření volební místnosti, nebo počet vygenerovaných voličů nedosáhne počtu voličů v okrsku. Právě událost příchodu voliče totiž způsobuje vytvoření procesu voliče (\texttt{Volic}) a jeho spuštění.
+
+Volič po svém příchodu vstupuje do fronty jednoho z komisařů, který je modelován jako obslužné zařízení (\texttt{Okrsek.komisari[]}). Poté vstupuje do fronty na plentu, která je modelována jako obslužné zařízení \texttt{Okrsek.plenta} a nakonec do fronty na volební urnu (\texttt{Okrsek.urna}), poté systém opouští. Byl-li ale poslední, aktivuje přitom předčasně událost \texttt{UzavreniMistnosti}, přičemž ji označí jako poslední uzavření ve volebním víkendu. Namísto uzavření volební místnosti na konci dne tak je místnost uzavřena již při odchodu posledního voliče. Událost uzavření místnosti místnost označí jako uzavíranou, postupně obsadí všechny fronty místnosti v obdobném pořadí jako volič a tím vyčká na odvolení voličů ve frontách. Jakmile se uzavření dostane až k volební urně (a ve frontách tedy již nejsou žádní voliči), je zahájeno sčítání hlasů.
+
+Sčítání je reprezentováno procesem \texttt{Scitani}, jeho trvání je určeno součtem času trvání všech tří fází, jehož způsob určení je definován v části Koncepce. Po dokončení sčítání zástupci volební komise odnášejí výsledky na přebírací místo.
+
+Na přebíracím místě se požadavky na pořízení řadí do společné fronty, ze které je odebírají pořizovací pracoviště. Ty jsou tedy modelovány sklad \texttt{PrebiraciMisto.porizovaciStanice}. Dokončením pořizování posledního požadavku na pořízení daného přebíracího místa je vytvořen požadavek na zpracování zpracovatelským pracovištěm, které je také součástí přebíracího místa. Je modelováno jako zařízení \texttt{PrebiraciMisto.zpracovatelskaStanice}. Doba zpracování závisí na počtu pořizovacích pracovišť a po jeho dokončení je vytvořen požadavek na centrum (proces \texttt{PozadavekNaCentrum}), který nejprve obsadí síť VPN (zařízení \texttt{vpn}), vyčká ve schránce (socketu) na uvolnění serveru (zařízení \texttt{serverCentra}), který následně obsadí.
+
+Druhá varianta řešení je implementována obdobně, jen proces \texttt{Scitani} namísto požadavku na pořízení generuje přímo požadavek na centrum (proces \texttt{PozadavekNaCentrum}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Podstata simulačních experimentů a jejich průběh} \label{podstata}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Cílem experimentů bylo změřit možné zefektivnění procesu sčítání odesíláním výsledků z okrskových počítačů přímo na server centra, namísto jejich nošení na přebírací místa. Konkrétně tedy o kolik by byla snížena celková doba sčítání a dále pak jak by se tímto krokem změnila propustnost serveru centra a doba čekání požadavků na server centra. Pro naplnění požadavků zadání pak bylo nutné měřit také celkovou dobu práce lidí v okrskových komisích.
+
+%=============================================================================
+\subsection{Postup experimentování}
+%=============================================================================
+
+Pro potřeby porovnání obou variant řešení distribuce volebních výsledků byl simulační model \cite[str. 44]{ims} popsaný výše spuštěn pro obě varianty. Střední hodnota exponenciální pravděpodobnostní funkce \cite[str. 91]{ims} určující příchody voličů byla stanovena tak, aby celková volební účast odpovídala reálné volební účasti. U obou experimentů byla měřena doba sčítání hlasů (od nejzazšího termínu uzavření volebních místností po přijetí všech výsledků serverem centra), volební účast, propustnost centra, doba čekání požadavků na server centra a pro úplné splnění zadání také celková doba práce lidí v okrskových komisích. Jejich srovnáním doufáme že zjistíme, která z variant, nyní používaná nebo navrhovaná, je výhodnější.
+
+%=============================================================================
+\subsection{Dokumentace jednotlivých experimentů}
+%=============================================================================
+
+Tato podkapitola porovnává výsledky experimentů prováděné na simulačním modelu ve variantě s přebíracími místy a ve variantě bez přebíracích míst při střední hodnotě exponenciální pravděpodobnostní funkce určující četnost příchodů voličů 5,99 minuty, což je experimentálně (simulačním experimentem) metodou půlení intervalu určená hodnota s cílem dosáhnout volební účasti co nejvíce odpovídající realitě -- 59,48\%.
+
+%-----------------------------------------------------------------------------
+\subsubsection{Doba sčítání a doba vyřizování požadavku}
+%-----------------------------------------------------------------------------
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/dobaScitani.eps}
+  \caption{Celková doba sčítání hlasů a distribuce výsledků.}
+  \label{fig:dobaScitani}
+\end{minipage}
+\hfill
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/data4.auto.eps}
+  \caption{Histogram doby cesty a vyřizování požadavku serverem.}
+  \label{fig:data4}
+\end{minipage}
+\end{figure}
+
+Dle výsledků simulace byla celková doba sčítání a distribuce volebních výsledků 260 minut při přenosu výsledků skrze přebírací místa (PM) a 167 minut při přenosu výsledků počítačovou sítí přímo z okrskových počítačů.
+
+\textbf{Potřebný čas se tedy snížil o více než 92 minut, tedy o více než 35\%.} (Graficky vyobrazeno na obrázku~\ref{fig:dobaScitani}.)
+
+Připojováním mnohem většího počtu klientů (okrsků namísto přebíracích míst) se ale nutně zvýší zatížení serveru a sítě VPN a tím i doba, kterou budou muset požadavky na přidělení obojího čekat. Pro rozhodnutí o vhodnosti řešení je tedy vhodné do zkoumaných aspektů zařadit také čas, po který bude vyřízení požadavku trvat.
+
+Průměrný čas potřebný k vyřízení požadavku (jeho cestu sítí VPN a jeho vyřízení serverem) se zvýšil z 2,25 sekundy na 2,36 sekundy. Jak ale můžeme vidět na histogramu na obrázku~\ref{fig:dobaCesty}, toto zpomalení není nikterak výrazné a rozhodně nevytváří potřebu více paralelních serverů nebo přebíracích míst v jakékoli formě.
+
+%-----------------------------------------------------------------------------
+\subsubsection{Propustnost a doba čekání na server centrum}
+%-----------------------------------------------------------------------------
+
+S průměrným časem potřebným k vyřízení požadavku souvisí také propustnost serveru a doba čekání požadavků na server centra.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/propustnost.eps}
+  \caption{Propustnost serveru volebního centra.}
+  \label{fig:propustnost}
+\end{minipage}
+\hfill
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/data3.auto.eps}
+  \caption{Histogram doby čekání na server centra.}
+  \label{fig:data3}
+\end{minipage}
+\end{figure}
+
+Propustnost vyjadřuje počet požadavků, které je server schopen obsloužit za jednotku času (v tomto případě za sekundu). Ze svého principu by měla být stejná pro různé množství požadavků směřujících na server. Tato vlastnost propustnosti je zde splněna, \textbf{propustnost první varianty s přípustnou tolerancí odpovídá propustnosti druhé varianty}, což potvrzuje správnost této části modelu.
+
+V původní variantě byl počet klientů (přebíracích míst) natolik nízký, že \textbf{na centrum nemusel čekat skoro žádný požadavek}. Statisticky se podíl klientů kteří museli čekat blížil nule. V nové variantě sice již k čekání na server místy docházelo, nicméně jen výjimečně. Ani doba čekání tedy nebrání v použití přímější varianty distribuce výsledků.
+
+%-----------------------------------------------------------------------------
+\subsubsection{Doba práce členů komise}
+%-----------------------------------------------------------------------------
+
+Dle zadání měla být v průběhu experimentu změřena doba práce členů volební komise. Výsledky těchto měření jsou zde proto uvedeny, ačkoli nemohou ovlivnit volbu varianty, neboť jsou u obou variant ekvivaletní.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/data1.auto.eps}
+  \caption{Histogram času komisařů stráveného vydáváním obálek.}
+  \label{fig:data1}
+\end{minipage}
+\hfill
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/data2.auto.eps}
+  \caption{Histogram času komisařů stráveného sčítáním hlasů.}
+  \label{fig:data2}
+\end{minipage}
+\end{figure}
+
+Měřitelná práce členů volební komise se skládá ze dvou částí - času stráveného vydáváním oficiálních obálek voličům (který se počítá každému komisaři zvlášť) a času stráveného počítáním hlasů (který je společný pro celou komisi). Tyto dvě části jsou tedy měřeny a v grafech vyobrazeny odděleně.
+
+%-----------------------------------------------------------------------------
+\subsubsection{Volební účast a doba strávená na přebíracím místě}
+%-----------------------------------------------------------------------------
+
+Pro úplnost zde uvádíme také grafy volební účasti po okrscích a doby kterou stráví komise na přebíracím místě, což lze považovat za třetí část práce volební komise, které se už ale účastní jen zástupci volebních komisí. Do tohoto času není zahrnuta cesta z volební místnosti na přebírací místo, ale jen doba čekání na pořizovací pracoviště a pořízení dat z flash paměti.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/data0.auto.eps}
+  \caption{Histogram volební účasti po okrscích v procentech.}
+  \label{fig:data0}
+\end{minipage}
+\hfill
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,keepaspectratio]{../../histogramy/remain0.eps}
+  \caption{Doba kterou stráví komise na PM.}
+  \label{fig:remain0}
+\end{minipage}
+\end{figure}
+
+%=============================================================================
+\subsection{Závěry experimentů}
+%=============================================================================
+
+Byly provedeny dva experimenty - pro varianty s přebíracími místy a pro variantu s přímým napojením okrsků na síť ČSÚ. Z experimentů lze odvodit rozdíly v chování obou variant systému s dostatečnou věrohodností a experimentální prověřování rozdílů v chování optimalizovaného volebního systému oproti stávajícímu volebnímu systému již nepřinese další výsledky významné pro rozhodnutí o výhodnosti provedení uvedené optimalizace.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Shrnutí simulačních experimentů a závěr} \label{zaver}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Z výsledků experimentů jednoznačně vyplývá, že zapojení okrskových počítačů do počítačové sítě ČSÚ by významně urychlilo proces sběru volebních výsledků, v případě volební účasti odpovídající volbám do Poslanecké sněmovny v roce 2013 by byl sběr dat urychlen o více než 92 minut / 35\%.
+
+Zdali by přínos z urychlení sběru dat převýšil náklady nutné k technické realizaci závisí na míře potřeby urychlení sběru dat. Například v případě, že by byl rozšířen zákon o veřejném referendu a volební infrastruktura by tak byla využívána častěji než jednou za několik let, tato investice do infrastruktury by se mohla vyplatit. Otázkou ovšem je, zdali by se v takovém případě nevyplatilo namísto rozšiřování privátní sítě zavedení hlasování po internetu za pomoci elektronického podpisu, které je v současnosti úspěšně využíváno v Estonsku \cite{estonsko}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% seznam citované literatury: každá položka je definována příkazem
+% \bibitem{xyz}, kde xyz je identifikátor citace (v textu použij: \cite[poznámka]{xyz})
+\begin{thebibliography}{1}
+
+\bibitem{ims}
+\href{http://www.fit.vutbr.cz/study/courses/IMS/public/prednasky/IMS.pdf}{Slidy předmětu IMS} \newline
+\href{http://www.fit.vutbr.cz/study/courses/IMS/public/prednasky/IMS.pdf}{\nolinkurl{http://www.fit.vutbr.cz/study/courses/IMS/public/prednasky/IMS.pdf}}
+
+\bibitem{otevrenevolby}
+\href{http://otevrenevolby.cz/data/psp_2013_obce-zahranici.csv}{OtevřenéVolby.cz} \newline
+\href{http://otevrenevolby.cz/data/psp_2013_obce-zahranici.csv}{\nolinkurl{http://otevrenevolby.cz/data/psp_2013_obce-zahranici.csv}}
+
+\bibitem{volby}
+\href{http://www.volby.cz/pls/ps2013/ps2?xjazyk=CZ}{Volby.cz} \newline
+\href{http://www.volby.cz/pls/ps2013/ps2?xjazyk=CZ}{\nolinkurl{http://www.volby.cz/pls/ps2013/ps2?xjazyk=CZ}}
+
+\bibitem{ezak-czso}
+\href{http://ezak-czso.cz/document_906/77524ea3d11ecb7-Příloha č. 1A_el podpis.pdf}{Zadávací dokumentace veřejné zakázky} \newline
+\href{http://ezak-czso.cz/document_906/77524ea3d11ecb7-Příloha č. 1A_el podpis.pdf}{Komplexní zajištění přípravy a konání voleb v letech 2014 - 2018} \newline
+\href{http://ezak-czso.cz/document_906/77524ea3d11ecb7-Příloha č. 1A_el podpis.pdf}{http://ezak-czso.cz/document\_906/77524ea3d11ecb7-Příloha č. 1A\_el podpis.pdf}
+
+\bibitem{smlouva-spec-web}
+\href{http://www.czso.cz/csu/redakce.nsf/i/159_2013_s_telefonica_volby2013/$File/159_2013_s_telefonica_volby2013.pdf}{Smlouva o poskytování služeb elektronických komunikací a zajištění služeb} \newline
+\href{http://www.czso.cz/csu/redakce.nsf/i/159_2013_s_telefonica_volby2013/$File/159_2013_s_telefonica_volby2013.pdf}{webhostingu - Příloha 1: Technická specifikace služeb} \newline
+\href{http://www.czso.cz/csu/redakce.nsf/i/159_2013_s_telefonica_volby2013/$File/159_2013_s_telefonica_volby2013.pdf}{\nolinkurl{http://www.czso.cz/csu/redakce.nsf/i/159_2013_s_telefonica_volby2013/$File/159_2013_s_telefonica_volby2013.pdf}}
+
+\bibitem{spec-soutez}
+\href{http://www.czso.cz/csu/redakce.nsf/i/zatezove_testy_voleb_technicka_specifikace_soutezenych_sluzeb/$File/zatezove_testy_voleb_pril_3_zp_technicka_specifikace_soutezenych_sluzeb.pdf}{Technická specifikace soutěžených služeb} \newline \href{http://www.czso.cz/csu/redakce.nsf/i/zatezove_testy_voleb_technicka_specifikace_soutezenych_sluzeb/$File/zatezove_testy_voleb_pril_3_zp_technicka_specifikace_soutezenych_sluzeb.pdf}{\nolinkurl{http://www.czso.cz/csu/redakce.nsf/i/zatezove_testy_voleb_technicka_specifikace_soutezenych_sluzeb/$File/zatezove_testy_voleb_pril_3_zp_technicka_specifikace_soutezenych_sluzeb.pdf}}
+
+\bibitem{nssoud1}
+\href{http://www.nssoud.cz/zakony/247_1995.pdf}{§1 odst. 4 č. 247/1995 Sb.} \newline
+\href{http://www.nssoud.cz/zakony/247_1995.pdf}{\nolinkurl{http://www.nssoud.cz/zakony/247_1995.pdf}}
+
+\bibitem{nssoud4}
+\href{http://www.nssoud.cz/zakony/247_1995.pdf}{§3-§4 č. 247/1995 Sb.} \newline
+\href{http://www.nssoud.cz/zakony/247_1995.pdf}{\nolinkurl{http://www.nssoud.cz/zakony/247_1995.pdf}}
+
+\bibitem{nssoud14}
+\href{http://www.nssoud.cz/zakony/247_1995.pdf}{§14c odst. C č. 247/1995 Sb.} \newline
+\href{http://www.nssoud.cz/zakony/247_1995.pdf}{\nolinkurl{http://www.nssoud.cz/zakony/247_1995.pdf}}
+
+\bibitem{mesicnik}
+\href{http://www.czso.cz/csu/2013edicniplan.nsf/c/EA002B592E/$File/18041309.pdf}{Statistika \& my, ročník 3 - 09/2013, strana 5} \newline
+\href{http://www.czso.cz/csu/2013edicniplan.nsf/c/EA002B592E/$File/18041309.pdf}{\nolinkurl{http://www.czso.cz/csu/2013edicniplan.nsf/c/EA002B592E/$File/18041309.pdf}}
+
+\bibitem{estonsko}
+\href{http://e-politics.cz/elektronicke-volby-v-estonsku-2/}{Elektronické volby v Estonsku [on-line] 8.12.2013} \newline
+\href{http://e-politics.cz/elektronicke-volby-v-estonsku-2/}{\nolinkurl{http://e-politics.cz/elektronicke-volby-v-estonsku-2/}}
+
+\end{thebibliography}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% přílohy
+\pagebreak
+\appendix
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Příloha: Grafy} \label{histograms}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/dobaScitani.eps}
+  \caption{Celková doba sčítání hlasů a distribuce výsledků.}
+  \label{fig:priloha-dobaScitani}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/propustnost.eps}
+  \caption{Propustnost serveru volebního centra.}
+  \label{fig:priloha-propustnost}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/data0.auto.eps}
+  \caption{Histogram volební účasti po okrscích v procentech.}
+  \label{fig:priloha-data0}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/data1.auto.eps}
+  \caption{Histogram času komisařů stráveného ověřováním.}
+  \label{fig:priloha-data1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/data2.auto.eps}
+  \caption{Doba práce komise - sčítání.}
+  \label{fig:priloha-data2}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/data3.auto.eps}
+  \caption{Doba čekání na server centra.}
+  \label{fig:priloha-data3}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/data4.auto.eps}
+  \caption{Doba cesty a vyřizování požadavku na centrum.}
+  \label{fig:priloha-data4}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth,height=8cm,keepaspectratio]{../../histogramy/remain0.eps}
+  \caption{Doba kterou stráví komise okrsku na přebíracím místě (v případě varianty s přebíracími místy).}
+  \label{fig:priloha-remain0}
+\end{figure}
+
+\end{document}
